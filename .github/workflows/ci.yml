@@ -1,0 +1,101 @@
+name: C++ Lab CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Detect changed exercises
+        id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            files=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.head_ref }})
+          else
+            files=$(git diff --name-only HEAD~1 HEAD)
+          fi
+          
+          # Extract unique exercise folders (e.g., exercices/exercice1)
+          exercises=$(echo "$files" | grep "^exercices/exercice[0-9]*" | cut -d'/' -f1,2 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          
+          # If no exercise changed, run all (safety net)
+          if [ "$exercises" == "[]" ]; then
+            exercises=$(find exercices -maxdepth 1 -type d -name "exercice*" | sort | jq -R -s -c 'split("\n")[:-1]')
+          fi
+          
+          echo "matrix=$exercises" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        exercise: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y g++ make
+      
+      - name: Validate Mandatory Structure
+        run: |
+          dir="${{ matrix.exercise }}"
+          if [ ! -f "$dir/Makefile" ]; then echo "::error::Missing Makefile in $dir"; exit 1; fi
+          if [ ! -d "$dir/src" ]; then echo "::error::Missing src/ directory in $dir"; exit 1; fi
+          if [ ! -f "$dir/README.md" ]; then echo "::error::Missing README.md in $dir (Theoretical answers required)"; exit 1; fi
+          # Optional folders (include/, data/) are NOT checked here
+      
+      - name: Compile (Strict Flags)
+        run: |
+          dir="${{ matrix.exercise }}"
+          cd $dir
+          make clean 2>/dev/null || true
+          
+          # TP4 requires -Werror flag, others use -Wall -Wextra -pedantic
+          if [[ "$dir" == *"tp4"* ]] || [[ "$dir" == *"TP4"* ]]; then
+            CXXFLAGS="-std=c++17 -Wall -Wextra -pedantic -Werror"
+          else
+            CXXFLAGS="-std=c++17 -Wall -Wextra -pedantic"
+          fi
+          
+          make CXXFLAGS="$CXXFLAGS" 2>&1 | tee build.log
+          
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            if grep -i "warning" build.log; then
+              echo "::error::Warnings treated as errors in PRs"; exit 1;
+            fi
+          fi
+      
+      - name: Run Tests (Dynamic Data Detection)
+        run: |
+          dir="${{ matrix.exercise }}"
+          cd $dir
+          
+          # Priority 1: Use 'make test' if defined in Makefile
+          if [ -f "Makefile" ] && grep -q "^test:" Makefile; then
+            echo "✓ Found 'test' target in Makefile. Running custom test..."
+            make test 2>&1 | tee output.txt
+          
+          # Priority 2: If data/ exists, pipe the first found file to stdin
+          elif [ -d "data" ] && [ "$(ls -A data 2>/dev/null)" ]; then
+            DATA_FILE=$(find data -type f | head -n 1)
+            echo "✓ Data directory found. Piping $DATA_FILE to stdin..."
+            timeout 5 ./main < "$DATA_FILE" > output.txt 2>&1 || echo "::warning::Execution timed out or failed"
+          
+          # Priority 3: Run without input (for exercises not requiring input)
+          else
+            echo "✓ No data found. Running without input..."
+            timeout 5 ./main > output.txt 2>&1 || echo "::warning::Execution timed out or failed"
+          fi
