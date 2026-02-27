@@ -23,3 +23,9 @@ et retourne false. Sinon, stocke la valeur dans x et retourne true.
 ### void afficher_resultat(const char* msg, double val)
 Affiche un message suivi d'une valeur numérique.
 Format : msg + val + saut de ligne.
+
+## ✅ Checklist
+- [x] Code compiles with `-Wall -Wextra -pedantic`
+- [ ] Every line of code is commented
+- [ ] Theoretical questions answered above
+- [ ] Data files (if any) included in `data/`
