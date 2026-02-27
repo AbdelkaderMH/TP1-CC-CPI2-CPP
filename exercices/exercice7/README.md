@@ -26,6 +26,6 @@ Format : msg + val + saut de ligne.
 
 ## ✅ Checklist
 - [x] Code compiles with `-Wall -Wextra -pedantic`
-- [ ] Every line of code is commented
-- [ ] Theoretical questions answered above
+- [x] Every line of code is commented
+- [x] Theoretical questions answered above
 - [ ] Data files (if any) included in `data/`
