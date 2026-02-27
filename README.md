@@ -1,4 +1,4 @@
-# C++ Lab Repository Guide (TP1–TP4)
+# C++ Lab Repository Guide (TP)
 
 This document defines the standard repository structure, CI/CD workflow, and contribution guidelines for the C++ Labs solutions. It is designed to support collaborative development via Pull Requests while enforcing strict compilation standards and theoretical analysis.
 
