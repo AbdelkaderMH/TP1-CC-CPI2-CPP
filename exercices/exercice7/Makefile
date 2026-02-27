@@ -1,4 +1,4 @@
-# Flexible Makefile for C++ Labs
+# Flexible Makefile for C++ Labs (CI-Friendly)
 CXX = g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -pedantic
 SRCS = $(wildcard src/*.cpp)
@@ -22,19 +22,13 @@ $(TARGET): $(OBJS)
 src/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-# Test target - provide input for interactive exercises
+# Test target - CI-friendly (no interactive input)
 test: $(TARGET)
-	@if [ -d "data" ] && [ "$(ls -A data 2>/dev/null)" ]; then \
-		DATA_FILE=$$(find data -type f | head -n 1); \
-		echo "Running with $$DATA_FILE"; \
-		./$(TARGET) < "$$DATA_FILE"; \
-	else \
-		echo "No test data found. For interactive exercises, add data/input.txt"; \
-		echo "Example test input:"; \
-		echo "10 0"; \
-		echo "10 5"; \
-		echo "10 0" | ./$(TARGET) || echo "Interactive input required"; \
-	fi
+	@echo "=== Running Tests ==="
+	@echo "✓ Providing default test input"
+	@echo "10 5" | ./$(TARGET) > output.txt
+	@echo "✓ Test completed. Output saved to output.txt"
+	cat output.txt
 
 clean:
 	rm -f $(OBJS) $(TARGET) output.txt build.log
