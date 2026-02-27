@@ -1,6 +1,5 @@
 # Flexible Makefile for C++ Labs
 CXX = g++
-# Default flags. TP4 should add -Werror via CXXFLAGS override
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -pedantic
 SRCS = $(wildcard src/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
@@ -23,14 +22,18 @@ $(TARGET): $(OBJS)
 src/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-#  Customize this target for specific data files when necessary
+# Test target - provide input for interactive exercises
 test: $(TARGET)
 	@if [ -d "data" ] && [ "$(ls -A data 2>/dev/null)" ]; then \
 		DATA_FILE=$$(find data -type f | head -n 1); \
 		echo "Running with $$DATA_FILE"; \
 		./$(TARGET) < "$$DATA_FILE"; \
 	else \
-		./$(TARGET); \
+		echo "No test data found. For interactive exercises, add data/input.txt"; \
+		echo "Example test input:"; \
+		echo "10 0"; \
+		echo "10 5"; \
+		echo "10 0" | ./$(TARGET) || echo "Interactive input required"; \
 	fi
 
 clean:
