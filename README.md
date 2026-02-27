@@ -180,7 +180,7 @@ $(TARGET): $(OBJS)
 src/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-#  Customize this target for specific data files when necessary
+#  Customize this target for specific data files when necessary or remove for interactive tests
 test: $(TARGET)
 	@if [ -d "data" ] && [ "$(ls -A data 2>/dev/null)" ]; then \
 		DATA_FILE=$$(find data -type f | head -n 1); \

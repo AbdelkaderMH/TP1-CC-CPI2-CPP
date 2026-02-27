@@ -22,13 +22,5 @@ $(TARGET): $(OBJS)
 src/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-# Test target - CI-friendly (no interactive input)
-test: $(TARGET)
-	@echo "=== Running Tests ==="
-	@echo "✓ Providing default test input"
-	@echo "10 5" | ./$(TARGET) > output.txt
-	@echo "✓ Test completed. Output saved to output.txt"
-	cat output.txt
-
 clean:
 	rm -f $(OBJS) $(TARGET) output.txt build.log
